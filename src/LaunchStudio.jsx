@@ -3,9 +3,9 @@ import { ArrowLeft, ArrowRight, Check, CircleAlert, FlaskConical, Info, Sparkles
 import './launch.css';
 
 const QUOTE_ASSETS = [
-  { value: 'USDC', name: 'USD Coin', note: 'Stable demo quote' },
-  { value: 'aNVDA', name: 'NVIDIA demo', note: 'Synthetic equity' },
-  { value: 'aAAPL', name: 'Apple demo', note: 'Synthetic equity' },
+  { value: 'USDC', name: 'USD Coin', note: 'Stable demo quote', logo: 'usdc' },
+  { value: 'aNVDA', name: 'NVIDIA demo', note: 'Synthetic equity', logo: 'nvidia' },
+  { value: 'aAAPL', name: 'Apple demo', note: 'Synthetic equity', logo: 'apple' },
 ];
 
 const EMPTY_FORM = {
@@ -146,7 +146,7 @@ export default function LaunchStudio({ onCreated }) {
             <Field label="Description" hint={`${form.description.length}/180`} error={errors.description}><textarea id="market-description" value={form.description} onChange={update('description')} maxLength={180} rows={4} placeholder="What does this market represent?" /></Field>
             <fieldset className="quote-fieldset"><legend>Quote asset</legend><span className="fieldset-hint">Choose the unit markets are priced in</span>
             <div className="quote-options" role="radiogroup" aria-label="Quote asset">
-              {QUOTE_ASSETS.map((asset) => <label className={`quote-option ${form.quoteAsset === asset.value ? 'is-selected' : ''}`} key={asset.value}><input type="radio" name="quoteAsset" value={asset.value} checked={form.quoteAsset === asset.value} onChange={update('quoteAsset')} /><span className="asset-symbol">{asset.value.slice(0, 2)}</span><span><strong>{asset.value}</strong><small>{asset.name}</small></span><Check className="option-check" size={16} /></label>)}
+              {QUOTE_ASSETS.map((asset) => <label className={`quote-option ${form.quoteAsset === asset.value ? 'is-selected' : ''}`} key={asset.value}><input type="radio" name="quoteAsset" value={asset.value} checked={form.quoteAsset === asset.value} onChange={update('quoteAsset')} /><span className="asset-symbol"><img src={`/logos/${asset.logo}.svg`} alt="" width="18" height="18" /></span><span><strong>{asset.value}</strong><small>{asset.name}</small></span><Check className="option-check" size={16} /></label>)}
             </div></fieldset>
             <div className="field-grid economics">
               <Field label="Total supply" hint="Whole units" error={errors.supply}><input id="market-supply" type="number" min="1000" step="1" value={form.supply} onChange={update('supply')} /></Field>
