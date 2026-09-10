@@ -2,6 +2,16 @@
 
 An interactive product design prototype for discovering companies through the products you use, practicing stock trades, and creating demo markets.
 
+## Product description
+
+Lilune is a personal discovery and ownership layer for the companies already woven into your life. It helps people start with familiar products and interests, follow the companies behind them, understand the surrounding context, and decide what they want to explore next.
+
+The experience is designed for a single user. Discovery turns everyday tools, entertainment, and technology interests into a personal watchlist. Trade provides a calm, readable market view with an interactive chart, clear order review, balance checks, fee visibility, and portfolio feedback. Launch Studio lets a creator shape a market idea with a name, ticker, description, quote asset, supply, and liquidity, then validate and preview it before creating a local demo market.
+
+Lilune is built around curiosity before complexity: a user can begin with something they already know, move into a focused market view, practice an action with explicit feedback, and return to a personal portfolio that remembers their choices. The visual language combines an ivory editorial canvas, deep ink typography, lilac surfaces, purple action states, local company logos, and an original orbit illustration. It takes inspiration from the warmth and personality of consumer products while keeping financial information legible and actions deliberate.
+
+The current prototype uses illustrative prices, local demo funds, local browser persistence, and demonstration assets. It does not claim real stock ownership, issuer backing, live liquidity, wallet execution, subscription payments, or deployed launchpad markets. Those integrations are the next product milestone once the relevant sponsor and issuer access is confirmed.
+
 ## Run
 
 Node.js 22 or newer. Run `npm install`, then `npm run dev`. `npm run build` produces the static app in `dist`.
