@@ -10,7 +10,7 @@ The experience is designed for a single user. Discovery turns everyday tools, en
 
 Lilune is built around curiosity before complexity: a user can begin with something they already know, move into a focused market view, practice an action with explicit feedback, and return to a personal portfolio that remembers their choices. The visual language combines an ivory editorial canvas, deep ink typography, lilac surfaces, purple action states, local company logos, and an original orbit illustration. It takes inspiration from the warmth and personality of consumer products while keeping financial information legible and actions deliberate.
 
-The current prototype uses illustrative prices, local demo funds, local browser persistence, and demonstration assets. It does not claim real stock ownership, issuer backing, live liquidity, wallet execution, subscription payments, or deployed launchpad markets. Those integrations are the next product milestone once the relevant sponsor and issuer access is confirmed.
+The current prototype uses illustrative prices, local demo funds, local browser persistence, and demonstration stock assets. Mera is now integrated as an optional Monad testnet account layer: a passkey derives the account on-device, the session is reconstructed from saved credential metadata, the address and MON balance are read from Monad, and a user-triggered 0 MON self-check can produce a real testnet transaction. The stock actions remain explicitly demo-only; Lilune does not claim real stock ownership, issuer backing, live liquidity, subscription payments, or deployed launchpad markets.
 
 ## Run
 
@@ -18,8 +18,8 @@ Node.js 22 or newer. Run `npm install`, then `npm run dev`. `npm run build` prod
 
 ## Included
 
-Discovery filters and search, persistent watchlists, personalized company mapping, illustrative interactive charts, buy/sell review and local demo balances, holdings and activity, and a validated three-step market creation studio.
+Discovery filters and search, persistent watchlists, personalized company mapping, illustrative interactive charts, buy/sell review and local demo balances, holdings and activity, a validated three-step market creation studio, and optional Mera passkey onboarding with Monad testnet balance/transaction state.
 
-All prices, chart histories, trades, assets and markets are illustrative. Data persists in this browser's localStorage. There are no wallet signatures, chain transactions, real stock ownership, subscription charges, or sponsor integrations in this design prototype.
+All stock prices, chart histories, trades, assets and markets are illustrative. Data persists in this browser's localStorage. Mera account metadata is persisted locally; private key material and signing sessions are not. Testnet proof transactions are separate from stock trades and require a funded account plus an explicit user action.
 
 Built with React, Vite, Lucide icons and custom CSS. Fonts: DM Sans and Manrope, with system fallbacks. Original hero illustration generated for Lilune.
