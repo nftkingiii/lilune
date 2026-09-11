@@ -425,6 +425,100 @@ h1 em {
 .market-section {
   margin-top: 38px;
 }
+.kuru-pulse {
+  margin-top: 34px;
+  padding: 25px;
+  border: 1px solid #dfd6e8;
+  border-radius: 14px;
+  background: #f5effb;
+}
+.kuru-pulse-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 22px;
+}
+.pulse-eyebrow {
+  color: #8665a5;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+.kuru-pulse h2 {
+  margin: 8px 0 6px;
+  color: #4f3d59;
+  font-size: clamp(20px, 3vw, 28px);
+  letter-spacing: -0.04em;
+}
+.kuru-pulse-heading p {
+  max-width: 510px;
+  margin: 0;
+  color: #897796;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.pulse-source {
+  display: flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 8px;
+  flex: 0 0 auto;
+  color: #6b8f7b;
+  font-size: 10px;
+}
+.pulse-source .status-dot {
+  width: 6px;
+  height: 6px;
+}
+.pulse-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  margin-top: 24px;
+  overflow: hidden;
+  border: 1px solid #e3d9ec;
+  border-radius: 10px;
+  background: #e3d9ec;
+}
+.pulse-metrics > div {
+  display: grid;
+  gap: 7px;
+  min-height: 88px;
+  padding: 15px;
+  background: #fcf9fe;
+}
+.pulse-metrics span,
+.pulse-metrics small {
+  color: #a18eaa;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+}
+.pulse-metrics strong {
+  color: #5b4865;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+.pulse-metrics small {
+  letter-spacing: 0;
+}
+.pulse-message {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px dashed #d9cce3;
+  border-radius: 9px;
+  color: #806c8e;
+  font-size: 11px;
+}
+.pulse-message.error {
+  color: #9a6d78;
+}
+.pulse-footnote {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 15px;
+  color: #9a87a3;
+  font-size: 9px;
+}
 .section-heading {
   display: flex;
   align-items: center;
@@ -1411,6 +1505,20 @@ footer > span:nth-of-type(2) {
   }
   .spotlight {
     display: none;
+  }
+  .kuru-pulse {
+    padding: 20px;
+  }
+  .kuru-pulse-heading {
+    display: grid;
+    gap: 14px;
+  }
+  .pulse-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .pulse-footnote {
+    display: grid;
+    gap: 5px;
   }
   .company-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -25,6 +25,7 @@ import {
   sendMeraSelfCheck,
   MONAD_TESTNET_CHAIN_ID,
 } from "./meraWallet";
+import { fetchKuruMonadPulse } from "./kuruMarkets";
 const read = (key, fallback) => {
   try {
     return JSON.parse(localStorage.getItem(key)) ?? fallback;
@@ -171,7 +172,8 @@ export default function App() {
     [meraBusy, setMeraBusy] = useState(false),
     [meraError, setMeraError] = useState(""),
     [proofStatus, setProofStatus] = useState("idle"),
-    [proofHash, setProofHash] = useState("");
+    [proofHash, setProofHash] = useState(""),
+    [kuruPulse, setKuruPulse] = useState({ status: "loading", data: null });
   const searchRef = useRef(null),
     dialogRef = useRef(null),
     meraSession = useRef(null);
@@ -186,6 +188,35 @@ export default function App() {
     }
   }, [toast]);
   useEffect(() => () => endMeraSession(meraSession.current), []);
+  useEffect(() => {
+    let disposed = false;
+    let controller;
+    let timeout;
+    const load = async () => {
+      controller?.abort();
+      clearTimeout(timeout);
+      controller = new AbortController();
+      timeout = setTimeout(() => controller.abort(), 8000);
+      try {
+        const data = await fetchKuruMonadPulse(controller.signal);
+        if (!disposed) setKuruPulse({ status: "ready", data });
+      } catch (error) {
+        if (!disposed && error?.name !== "AbortError") {
+          setKuruPulse({ status: "error", data: null, error: error?.message });
+        }
+      } finally {
+        clearTimeout(timeout);
+      }
+    };
+    load();
+    const timer = setInterval(load, 30000);
+    return () => {
+      disposed = true;
+      controller?.abort();
+      clearTimeout(timeout);
+      clearInterval(timer);
+    };
+  }, []);
   async function connectMera() {
     if (meraBusy) return;
     setMeraBusy(true);
@@ -457,6 +488,79 @@ export default function App() {
                   Explore NVIDIA <ArrowRight size={18} />
                 </button>
               </aside>
+            </section>
+            <section className="kuru-pulse" aria-labelledby="kuru-pulse-title">
+              <div className="kuru-pulse-heading">
+                <div>
+                  <span className="pulse-eyebrow">MONAD MARKET PULSE</span>
+                  <h2 id="kuru-pulse-title">
+                    What’s moving beyond the familiar.
+                  </h2>
+                  <p>
+                    A live, read-only window into Kuru’s MON/USDC market. Start
+                    with context before you decide what deserves your attention.
+                  </p>
+                </div>
+                <span className="pulse-source">
+                  <span className="status-dot" /> Kuru feed
+                </span>
+              </div>
+              {kuruPulse.status === "loading" && (
+                <div className="pulse-message">Reading the market pulse…</div>
+              )}
+              {kuruPulse.status === "error" && (
+                <div className="pulse-message error" role="status">
+                  Kuru’s public feed is unavailable right now. Lilune’s saved
+                  discovery experience is still available.
+                </div>
+              )}
+              {kuruPulse.status === "ready" && kuruPulse.data && (
+                <div className="pulse-metrics">
+                  <div>
+                    <span>MON / USDC</span>
+                    <strong>{kuruPulse.data.lastPrice.toFixed(4)}</strong>
+                    <small>last price</small>
+                  </div>
+                  <div>
+                    <span>24H MOVE</span>
+                    <strong
+                      className={
+                        kuruPulse.data.changePercent >= 0
+                          ? "positive"
+                          : "negative"
+                      }
+                    >
+                      {kuruPulse.data.changePercent >= 0 ? "+" : ""}
+                      {kuruPulse.data.changePercent.toFixed(2)}%
+                    </strong>
+                    <small>rolling ticker</small>
+                  </div>
+                  <div>
+                    <span>24H VOLUME</span>
+                    <strong>
+                      {Number.isFinite(kuruPulse.data.volume24h)
+                        ? "$" +
+                          (kuruPulse.data.volume24h / 1e6).toFixed(2) +
+                          "M"
+                        : "—"}
+                    </strong>
+                    <small>USDC volume</small>
+                  </div>
+                  <div>
+                    <span>TRADES</span>
+                    <strong>
+                      {kuruPulse.data.tradeCount.toLocaleString()}
+                    </strong>
+                    <small>24h count</small>
+                  </div>
+                </div>
+              )}
+              <div className="pulse-footnote">
+                <span>
+                  Source: Kuru market index · refreshed every 30 seconds
+                </span>
+                <span>Read-only · no wallet action</span>
+              </div>
             </section>
             <section className="market-section">
               <div className="section-heading">
