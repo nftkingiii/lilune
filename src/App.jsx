@@ -33,6 +33,16 @@ const read = (key, fallback) => {
     return fallback;
   }
 };
+function getMeraErrorMessage(error) {
+  const code = error?.code;
+  if (code === "PRF_UNAVAILABLE") {
+    return "This passkey has no WebAuthn PRF support. Try Chrome with Google Password Manager, Edge on a supported Windows passkey, 1Password, or a hardware key.";
+  }
+  if (code === "PASSKEY_OPERATION_FAILED") {
+    return "The passkey ceremony was cancelled or blocked. Try again in localhost/HTTPS and keep the passkey prompt open.";
+  }
+  return error?.message || "Mera could not connect on this device.";
+}
 const logos = {
   NVDA: "nvidia",
   AAPL: "apple",
@@ -235,9 +245,7 @@ export default function App() {
           : "Mera account created on Monad testnet",
       );
     } catch (error) {
-      setMeraError(
-        error?.message || "Mera could not create an account on this device.",
-      );
+      setMeraError(getMeraErrorMessage(error));
     } finally {
       setMeraBusy(false);
     }
@@ -403,6 +411,11 @@ export default function App() {
             </span>
             <span className="avatar">{mera ? "M" : "Y"}</span>
           </button>
+          {meraError && (
+            <span className="mera-error-inline" role="alert">
+              {meraError}
+            </span>
+          )}
         </div>
       </header>
       <main>

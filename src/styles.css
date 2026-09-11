@@ -160,6 +160,16 @@ nav button.active:after {
   border-radius: 30px;
   font-size: 12px;
 }
+.mera-error-inline {
+  max-width: 320px;
+  padding: 8px 10px;
+  border: 1px solid #e6b9be;
+  border-radius: 10px;
+  background: #fff5f5;
+  color: #9c4c55;
+  font-size: 10px;
+  line-height: 1.35;
+}
 .avatar {
   display: grid;
   place-items: center;
@@ -1457,6 +1467,12 @@ footer > span:nth-of-type(2) {
   }
   .account {
     font-size: 11px;
+  }
+  .mera-error-inline {
+    position: absolute;
+    top: 62px;
+    right: 20px;
+    max-width: min(300px, calc(100vw - 40px));
   }
   .account > svg {
     display: none;

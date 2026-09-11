@@ -33,6 +33,18 @@ const publicClient = createPublicClient({
   transport: http(),
 });
 
+function assertWebAuthnReady() {
+  if (!globalThis.window?.isSecureContext) {
+    throw new Error(
+      "Mera needs a secure browser context. Open Lilune on localhost or HTTPS.",
+    );
+  }
+
+  if (typeof globalThis.navigator?.credentials?.create !== "function") {
+    throw new Error("This browser does not expose the WebAuthn passkey API.");
+  }
+}
+
 function bytesToBase64(bytes) {
   let binary = "";
   bytes.forEach((byte) => {
@@ -67,6 +79,7 @@ async function readBalance(address) {
 }
 
 export async function createMeraAccount() {
+  assertWebAuthnReady();
   const rp = { id: window.location.hostname, name: "Lilune" };
   const created = await createPasskeyWithPrfOutput({
     rp,
