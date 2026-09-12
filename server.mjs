@@ -6,7 +6,11 @@ import { createServer } from "node:http";
 
 const root = resolve(fileURLToPath(new URL("./dist", import.meta.url)));
 const port = Number(process.env.PORT || 4173);
-const revision = process.env.RAILWAY_GIT_COMMIT_SHA || process.env.GIT_COMMIT_SHA || "local";
+const revision =
+  process.env.RAILWAY_GIT_COMMIT_SHA ||
+  process.env.GIT_COMMIT_SHA ||
+  process.env.LILUNE_REVISION ||
+  "local";
 const contentTypes = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
