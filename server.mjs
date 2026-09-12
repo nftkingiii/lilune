@@ -1,6 +1,6 @@
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
-import { extname, join, normalize, resolve } from "node:path";
+import { extname, isAbsolute, join, normalize, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer } from "node:http";
 
@@ -20,7 +20,10 @@ const contentTypes = {
 function safePath(urlPath) {
   const requested = normalize(decodeURIComponent(urlPath.split("?")[0]));
   const candidate = resolve(join(root, requested === "/" ? "index.html" : requested));
-  return candidate === root || candidate.startsWith(root + "\\") ? candidate : null;
+  const relativePath = relative(root, candidate);
+  return !relativePath || (relativePath !== ".." && !relativePath.startsWith(`..${normalize("/")}`) && !isAbsolute(relativePath))
+    ? candidate
+    : null;
 }
 
 function headers(type) {
