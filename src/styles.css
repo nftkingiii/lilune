@@ -114,7 +114,8 @@ header {
 }
 nav {
   display: flex;
-  height: 100%;
+  height: 64px;
+  align-items: center;
   gap: 30px;
 }
 nav button {
@@ -130,7 +131,7 @@ nav button.active {
 nav button.active:after {
   content: "";
   position: absolute;
-  bottom: -1px;
+  bottom: -6px;
   height: 3px;
   left: 0;
   right: 0;
@@ -145,10 +146,6 @@ nav button.active:after {
   display: flex;
   align-items: center;
   gap: 22px;
-}
-.demo-label {
-  font-size: 11px;
-  color: #87818d;
 }
 .account {
   display: flex;
@@ -1464,6 +1461,9 @@ footer > span:nth-of-type(2) {
   }
   nav button {
     font-size: 12px;
+  }
+  nav button.active:after {
+    bottom: -5px;
   }
   .account {
     font-size: 11px;

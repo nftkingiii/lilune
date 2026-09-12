@@ -390,11 +390,6 @@ export default function App() {
           ))}
         </nav>
         <div className="header-right">
-          <span className="demo-label">
-            {mera
-              ? `Monad testnet · ${mera.balance.formatted} MON`
-              : "Monad testnet"}
-          </span>
           <button
             className={"account " + (mera ? "connected" : "")}
             onClick={() => (mera ? setPage("Portfolio") : connectMera())}
