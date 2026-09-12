@@ -926,6 +926,22 @@ footer > span:nth-of-type(2) {
   border: 1px solid #dfd4ee;
   border-radius: 4px;
 }
+.live-chart-state {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  min-height: 245px;
+  border: 1px dashed #d7c9e8;
+  border-radius: 10px;
+  background: #fbf9fd;
+  color: #765a93;
+  font-size: 12px;
+}
+.live-chart-state small {
+  color: #9b8ca6;
+  font-size: 10px;
+}
 .chart-axis {
   display: flex;
   justify-content: space-between;

@@ -29,7 +29,7 @@ import {
   sendMeraSelfCheck,
   MONAD_TESTNET_CHAIN_ID,
 } from "./meraWallet";
-import { fetchKuruMonadPulse } from "./kuruMarkets";
+import { fetchKuruMarketChart, fetchKuruMonadPulse } from "./kuruMarkets";
 const read = (key, fallback) => {
   try {
     return JSON.parse(localStorage.getItem(key)) ?? fallback;
@@ -48,6 +48,7 @@ function getMeraErrorMessage(error) {
   return error?.message || "Mera could not connect on this device.";
 }
 const logos = {
+  MON_USDC: "monad",
   NVDA: "nvidia",
   AAPL: "apple",
   MSFT: "microsoft",
@@ -55,18 +56,27 @@ const logos = {
   GOOGL: "google",
   META: "meta",
 };
+const liveKuruAsset = {
+  symbol: "MON_USDC",
+  name: "MON / USDC",
+  mark: "M",
+  price: 0,
+  change: 0,
+  category: "Live onchain",
+  color: "#e7dcff",
+  ink: "#6c43bd",
+  tag: "Monad's live market",
+  description: "A live read-only view of Monad liquidity from Kuru's MON/USDC market.",
+  volume: "—",
+  isLive: true,
+};
 function Mark({ asset, size = "" }) {
   return (
     <span
       className={"asset-mark " + size}
       style={{ background: asset.color, color: asset.ink }}
     >
-      <img
-        src={`/logos/${logos[asset.symbol]}.svg`}
-        alt=""
-        width="24"
-        height="24"
-      />
+      <img src={`/logos/${logos[asset.symbol]}.svg`} alt="" width="24" height="24" />
     </span>
   );
 }
@@ -189,7 +199,8 @@ export default function App() {
     [meraError, setMeraError] = useState(""),
     [proofStatus, setProofStatus] = useState("idle"),
     [proofHash, setProofHash] = useState(""),
-    [kuruPulse, setKuruPulse] = useState({ status: "loading", data: null });
+    [kuruPulse, setKuruPulse] = useState({ status: "loading", data: null }),
+    [kuruChart, setKuruChart] = useState({ status: "idle", data: [], source: "" });
   const searchRef = useRef(null),
     dialogRef = useRef(null),
     meraSession = useRef(null);
@@ -233,6 +244,31 @@ export default function App() {
       clearInterval(timer);
     };
   }, []);
+  useEffect(() => {
+    if (page !== "Trade" || selected.symbol !== "MON_USDC") {
+      setKuruChart({ status: "idle", data: [], source: "" });
+      return undefined;
+    }
+    let disposed = false;
+    let controller;
+    const load = async () => {
+      controller?.abort();
+      controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      setKuruChart((current) => ({ ...current, status: "loading" }));
+      try {
+        const result = await fetchKuruMarketChart(period, controller.signal);
+        if (!disposed) setKuruChart({ status: "ready", data: result.candles, source: result.source });
+      } catch (error) {
+        if (!disposed && error.name !== "AbortError") setKuruChart((current) => ({ ...current, status: "error", source: error.message }));
+      } finally {
+        clearTimeout(timeout);
+      }
+    };
+    load();
+    const refresh = setInterval(load, 30000);
+    return () => { disposed = true; controller?.abort(); clearInterval(refresh); };
+  }, [page, period, selected.symbol]);
   async function connectMera() {
     if (meraBusy) return;
     setMeraBusy(true);
@@ -337,14 +373,18 @@ export default function App() {
       (a.name + " " + a.symbol).toLowerCase().includes(query.toLowerCase()),
   );
   if (sort) shown = [...shown].sort((a, b) => b.change - a.change);
-  const value = Number(amount),
+  const isKuruLive = selected.symbol === "MON_USDC",
+    livePrice = isKuruLive ? (kuruPulse.data?.lastPrice || kuruChart.data.at(-1)?.close || 0) : selected.price,
+    liveChange = isKuruLive ? (kuruPulse.data?.changePercent ?? 0) : selected.change,
+    value = Number(amount),
     fee = Math.round(value * 0.001 * 100) / 100,
-    qty = value / selected.price,
+    qty = value / livePrice,
     owned = holdings[selected.symbol] || 0,
     valid =
       Number.isFinite(value) &&
       value > 0 &&
-      (side === "Buy" ? value + fee <= balance : qty <= owned),
+      (side === "Buy" ? value + fee <= balance : qty <= owned) &&
+      livePrice > 0 && Number.isFinite(qty),
     total =
       balance +
       assets.reduce((s, a) => s + (holdings[a.symbol] || 0) * a.price, 0);
@@ -779,15 +819,15 @@ export default function App() {
             <div className="trade-layout">
               <section className="trade-main">
                 <div className="asset-selector">
-                  <span>Company</span>
-                  <ChoiceMenu label="Company" value={selected.symbol} searchable options={assets.map(a => ({value:a.symbol,label:a.name,detail:a.symbol,logo:'/logos/'+logos[a.symbol]+'.svg'}))} onChange={v => setSelected(assets.find(a => a.symbol === v))}/>
+                  <span>Market</span>
+                  <ChoiceMenu label="Market" value={selected.symbol} searchable options={[liveKuruAsset, ...assets].map(a => ({value:a.symbol,label:a.name,detail:a.isLive ? 'Live Kuru market' : a.symbol,logo:'/logos/'+logos[a.symbol]+'.svg'}))} onChange={v => setSelected(v === liveKuruAsset.symbol ? liveKuruAsset : assets.find(a => a.symbol === v))}/>
                 </div>
                 <div className="trade-title">
                   <Mark asset={selected} />
                   <div>
                     <h2>{selected.name}</h2>
                     <span className="muted">
-                      {selected.symbol} · Illustrative stock asset
+                      {isKuruLive ? "MON_USDC · Live Kuru market" : `${selected.symbol} · Illustrative stock asset`}
                     </span>
                   </div>
                   <button
@@ -806,27 +846,26 @@ export default function App() {
                   </button>
                 </div>
                 <div className="price-display">
-                  {money(selected.price)}
+                  {isKuruLive ? `$${livePrice.toFixed(4)}` : money(selected.price)}
                   <span
-                    className={selected.change > 0 ? "positive" : "negative"}
+                    className={liveChange > 0 ? "positive" : "negative"}
                   >
-                    {selected.change > 0 ? "+" : ""}
-                    {selected.change}% <small>sample day</small>
+                    {liveChange > 0 ? "+" : ""}
+                    {Number(liveChange).toFixed(2)}% <small>{isKuruLive ? "24h live" : "sample day"}</small>
                   </span>
                 </div>
                 <div className="chart-toolbar"><span>Price history</span><div className="chart-switch" aria-label="Chart style">{['line','candles'].map(type => <button key={type} aria-pressed={chartType === type} onClick={() => changeChartType(type)}>{type === 'line' ? 'Line' : 'Candles'}</button>)}</div></div>
-                <TradingChart
+                {isKuruLive && kuruChart.status === "error" && !kuruChart.data.length ? <div className="trading-chart live-chart-state" role="alert">Live Kuru data is unavailable right now.<small>{kuruChart.source}</small></div> : <TradingChart
                   type={chartType}
-                  price={selected.price}
+                  price={livePrice}
                   seed={assets.indexOf(selected) + 1}
                   period={period}
-                />
+                  data={isKuruLive && kuruChart.data.length ? kuruChart.data : undefined}
+                  live={isKuruLive}
+                />}
                 <div className="chart-axis">
-                  <span>09:30</span>
-                  <span>11:00</span>
-                  <span>12:30</span>
-                  <span>14:00</span>
-                  <span>16:00</span>
+                  {(isKuruLive && kuruChart.data.length ? [0, .25, .5, .75, 1].map((position) => kuruChart.data[Math.min(kuruChart.data.length - 1, Math.round(position * (kuruChart.data.length - 1)))]) : []).map((bar, index) => <span key={index}>{new Date(bar.openTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span>)}
+                  {!isKuruLive && <><span>09:30</span><span>11:00</span><span>12:30</span><span>14:00</span><span>16:00</span></>}
                 </div>
                 <div className="periods">
                   {["1D", "1W", "1M", "1Y"].map((p) => (
@@ -838,7 +877,7 @@ export default function App() {
                       {p}
                     </button>
                   ))}
-                  <span>Illustrative chart</span>
+                  <span>{isKuruLive ? (kuruChart.status === "error" ? "Live data refresh failed · showing last bars" : kuruChart.source || "Loading live data") : "Illustrative chart"}</span>
                 </div>
                 <div className="about-company">
                   <h3>In your world</h3>
@@ -848,10 +887,10 @@ export default function App() {
                       Category<strong>{selected.category}</strong>
                     </span>
                     <span>
-                      Asset type<strong>Demo stock</strong>
+                      Asset type<strong>{isKuruLive ? "Kuru market" : "Demo stock"}</strong>
                     </span>
                     <span>
-                      Sample volume<strong>${selected.volume}</strong>
+                      {isKuruLive ? "Market source" : "Sample volume"}<strong>{isKuruLive ? "Kuru API" : `$${selected.volume}`}</strong>
                     </span>
                   </div>
                 </div>
@@ -1019,8 +1058,7 @@ export default function App() {
                   Review {side.toLowerCase()} <ArrowRight size={17} />
                 </button>
                 <p className="ticket-note">
-                  Practice with demo funds. Orders are simulated locally and do
-                  not buy real stocks.
+                  {isKuruLive ? "Live Kuru market reference. Orders remain local demo actions; Kuru execution is not connected." : "Practice with demo funds. Orders are simulated locally and do not buy real stocks."}
                 </p>
               </aside>
             </div>

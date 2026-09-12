@@ -20,6 +20,28 @@ const contentTypes = {
   ".svg": "image/svg+xml",
   ".webp": "image/webp",
 };
+const kuruOrigin = "https://exchange.kuru.io";
+const kuruEndpoints = new Set(["klines", "trades"]);
+const kuruIntervals = new Set(["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"]);
+
+function kuruTarget(requestUrl) {
+  const parsed = new URL(requestUrl, "http://localhost");
+  const match = parsed.pathname.match(/^\/api\/kuru\/(klines|trades)$/);
+  if (!match || !kuruEndpoints.has(match[1])) return null;
+  const target = new URL(`/api/v3/${match[1]}`, kuruOrigin);
+  const symbol = parsed.searchParams.get("symbol") || "";
+  if (!/^[A-Za-z0-9]+_[A-Za-z0-9]+$/.test(symbol) || symbol.length > 32) return null;
+  target.searchParams.set("symbol", symbol);
+  const limit = parsed.searchParams.get("limit");
+  if (limit !== null && /^(?:[1-9]\d{0,2}|1000)$/.test(limit)) target.searchParams.set("limit", limit);
+  else if (limit !== null) return null;
+  if (match[1] === "klines") {
+    const interval = parsed.searchParams.get("interval") || "1h";
+    if (!kuruIntervals.has(interval)) return null;
+    target.searchParams.set("interval", interval);
+  }
+  return target;
+}
 
 function safePath(urlPath) {
   const requested = normalize(decodeURIComponent(urlPath.split("?")[0]));
@@ -49,6 +71,33 @@ const server = createServer(async (request, response) => {
   if (request.url?.split("?")[0] === "/healthz") {
     response.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     response.end(JSON.stringify({ ok: true, revision }));
+    return;
+  }
+
+  if (request.url?.startsWith("/api/kuru/")) {
+    const target = kuruTarget(request.url);
+    if (!target) {
+      response.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+      response.end(JSON.stringify({ error: "Invalid Kuru market-data request." }));
+      return;
+    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    try {
+      const upstream = await fetch(target, { signal: controller.signal });
+      const body = Buffer.from(await upstream.arrayBuffer());
+      response.writeHead(upstream.status, {
+        "Cache-Control": "no-store",
+        "Content-Type": upstream.headers.get("content-type") || "application/json; charset=utf-8",
+        "X-Content-Type-Options": "nosniff",
+      });
+      response.end(body);
+    } catch {
+      response.writeHead(502, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+      response.end(JSON.stringify({ error: "Kuru market data is temporarily unavailable." }));
+    } finally {
+      clearTimeout(timeout);
+    }
     return;
   }
 
