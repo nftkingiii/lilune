@@ -855,6 +855,16 @@ export default function App() {
                     </div>
                     <div className="mera-status-actions">
                       <span>{mera.balance.formatted} MON</span>
+                      {mera.balance.raw === "0" && (
+                        <a
+                          className="fund-link"
+                          href="https://faucet.monad.xyz/"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Get testnet MON <ExternalLink size={12} />
+                        </a>
+                      )}
                       <button
                         className="text-action"
                         onClick={proveMeraOnchain}
