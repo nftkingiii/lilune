@@ -66,7 +66,7 @@ function deriveSession(prfOutput) {
   return createSecp256k1SigningSession({ privateKey: node.privateKey });
 }
 
-async function readBalance(address) {
+export async function readBalance(address) {
   try {
     const balance = await publicClient.getBalance({ address });
     return {
@@ -74,7 +74,7 @@ async function readBalance(address) {
       formatted: Number(formatEther(balance)).toFixed(4),
     };
   } catch {
-    return { raw: "0", formatted: "Unavailable" };
+    return { raw: null, formatted: "Unavailable" };
   }
 }
 

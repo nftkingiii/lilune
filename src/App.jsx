@@ -18,6 +18,10 @@ import {
 } from "lucide-react";
 import { assets, series, money } from "./data";
 import LaunchStudio from "./LaunchStudio";
+import AccountMenu from './AccountMenu';
+import ChoiceMenu from './ChoiceMenu';
+import TradingChart from './TradingChart';
+import './menus.css';
 import {
   createMeraAccount,
   endMeraSession,
@@ -160,6 +164,8 @@ function Chart({ seed = 1, large = false, period = "1D", negative = false }) {
   );
 }
 export default function App() {
+  const [chartType, setChartType] = useState(() => read('lilune-chart-type', 'line') === 'candles' ? 'candles' : 'line');
+  function changeChartType(type) { setChartType(type); try { localStorage.setItem('lilune-chart-type', JSON.stringify(type)); } catch {} }
   const [page, setPage] = useState("Discover"),
     [category, setCategory] = useState("For you"),
     [query, setQuery] = useState(""),
@@ -390,7 +396,7 @@ export default function App() {
           ))}
         </nav>
         <div className="header-right">
-          <button
+          {mera ? <AccountMenu wallet={mera} chartType={chartType} onChartType={changeChartType} onBalance={balance => setMera(current => current ? {...current, balance} : current)} onDisconnect={() => { endMeraSession(meraSession.current); meraSession.current = null; setMera(null); setProofStatus('idle'); setProofHash(''); setMeraError(''); setToast('Disconnected. Your passkey is saved.'); }}/> : <button
             className={"account " + (mera ? "connected" : "")}
             onClick={() => (mera ? setPage("Portfolio") : connectMera())}
             disabled={meraBusy}
@@ -405,7 +411,7 @@ export default function App() {
                   : "Connect Mera"}
             </span>
             <span className="avatar">{mera ? "M" : "Y"}</span>
-          </button>
+          </button>}
           {meraError && (
             <span className="mera-error-inline" role="alert">
               {meraError}
@@ -606,10 +612,7 @@ export default function App() {
                     </button>
                   ))}
                 </div>
-                <button className="sort-button" onClick={() => setSort(!sort)}>
-                  {sort ? "Top movers" : "Featured"}
-                  <ChevronDown size={14} />
-                </button>
+                <ChoiceMenu label="Sort companies" value={sort ? 'movers' : 'featured'} options={[{value:'featured',label:'Featured'},{value:'movers',label:'Top movers'}]} onChange={v => setSort(v === 'movers')}/>
               </div>
               <div className="company-grid">
                 {shown.map((a, i) => (
@@ -760,22 +763,8 @@ export default function App() {
             <div className="trade-layout">
               <section className="trade-main">
                 <div className="asset-selector">
-                  <label htmlFor="asset">Company</label>
-                  <select
-                    id="asset"
-                    value={selected.symbol}
-                    onChange={(e) =>
-                      setSelected(
-                        assets.find((a) => a.symbol === e.target.value),
-                      )
-                    }
-                  >
-                    {assets.map((a) => (
-                      <option key={a.symbol} value={a.symbol}>
-                        {a.name} · {a.symbol}
-                      </option>
-                    ))}
-                  </select>
+                  <span>Company</span>
+                  <ChoiceMenu label="Company" value={selected.symbol} searchable options={assets.map(a => ({value:a.symbol,label:a.name,detail:a.symbol,logo:'/logos/'+logos[a.symbol]+'.svg'}))} onChange={v => setSelected(assets.find(a => a.symbol === v))}/>
                 </div>
                 <div className="trade-title">
                   <Mark asset={selected} />
@@ -809,8 +798,10 @@ export default function App() {
                     {selected.change}% <small>sample day</small>
                   </span>
                 </div>
-                <Chart
-                  large
+                <div className="chart-toolbar"><span>Price history</span><div className="chart-switch" aria-label="Chart style">{['line','candles'].map(type => <button key={type} aria-pressed={chartType === type} onClick={() => changeChartType(type)}>{type === 'line' ? 'Line' : 'Candles'}</button>)}</div></div>
+                <TradingChart
+                  type={chartType}
+                  price={selected.price}
                   seed={assets.indexOf(selected) + 1}
                   period={period}
                 />
@@ -870,7 +861,7 @@ export default function App() {
                         disabled={
                           proofStatus === "pending" ||
                           mera.balance.raw === "0" ||
-                          mera.balance.raw === "Unavailable"
+                          mera.balance.raw === null
                         }
                         title={
                           mera.balance.raw === "0"
