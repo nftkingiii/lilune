@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, CircleAlert, ExternalLink, FlaskConical, Info, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, CircleAlert, Copy, ExternalLink, FlaskConical, Info, Share2, Sparkles } from 'lucide-react';
 import './launch.css';
 
 const QUOTE_ASSETS = [
@@ -53,6 +53,7 @@ export default function LaunchStudio({ onCreated, kuruPulse }) {
   const [storageError, setStorageError] = useState('');
   const [savedMarkets, setSavedMarkets] = useState(readSavedMarkets);
   const [created, setCreated] = useState(null);
+  const [shareStatus, setShareStatus] = useState('');
 
   const selectedQuote = useMemo(
     () => QUOTE_ASSETS.find((asset) => asset.value === form.quoteAsset) || QUOTE_ASSETS[0],
@@ -100,6 +101,21 @@ export default function LaunchStudio({ onCreated, kuruPulse }) {
     onCreated?.(market);
   };
 
+  const shareDraft = async (market) => {
+    const brief = `Lilune launch draft\n\n${market.name} ($${market.ticker})\n${market.description}\n\n${formatNumber(market.supply)} total supply · ${formatNumber(market.initialLiquidity)} ${market.quoteAsset} initial liquidity\n\nLocal demo only — no assets moved. Explore it at ${window.location.origin}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: `${market.name} · Lilune launch draft`, text: brief });
+        setShareStatus('Draft ready to share');
+      } else {
+        await navigator.clipboard.writeText(brief);
+        setShareStatus('Launch brief copied');
+      }
+    } catch (error) {
+      if (error?.name !== 'AbortError') setShareStatus('Could not share this draft yet.');
+    }
+  };
+
   if (created) {
     return (
       <section className="launch-studio launch-success" aria-labelledby="launch-success-title">
@@ -112,9 +128,15 @@ export default function LaunchStudio({ onCreated, kuruPulse }) {
           <div><strong>{created.ticker}</strong><span>{formatNumber(created.supply)} total supply · quoted in {created.quoteAsset}</span></div>
           <span className="demo-chip">LOCAL DEMO</span>
         </div>
-        <button className="button button-primary" type="button" onClick={() => { setCreated(null); setStep(0); setForm(EMPTY_FORM); }}>
-          <Sparkles size={17} /> Launch another
-        </button>
+        <div className="success-actions">
+          <button className="button button-primary" type="button" onClick={() => shareDraft(created)}>
+            <Share2 size={17} /> Share launch brief
+          </button>
+          <button className="button button-quiet" type="button" onClick={() => { setCreated(null); setStep(0); setForm(EMPTY_FORM); setShareStatus(''); }}>
+            <Sparkles size={17} /> Launch another
+          </button>
+        </div>
+        {shareStatus && <p className="share-status" role="status"><Copy size={13} /> {shareStatus}</p>}
       </section>
     );
   }
@@ -157,7 +179,7 @@ export default function LaunchStudio({ onCreated, kuruPulse }) {
 
           {step === 1 && <div className="validation-view"><div className="section-intro"><p className="eyebrow">Step 02</p><h2>Validation check</h2><p>Here’s a quick sanity check before you review the final market card.</p></div><div className="checks">{[['Market identity', 'Name and ticker are ready to publish.', true], ['Description clarity', 'Your premise gives the market useful context.', true], ['Liquidity floor', `${formatNumber(form.liquidity)} ${form.quoteAsset} is above the demo minimum.`, true], ['Demo boundary', 'No wallet, backing, or chain transaction is involved.', true]].map(([title, copy, valid]) => <div className="check-row" key={title}><span className="check-icon"><Check size={16} /></span><div><strong>{title}</strong><span>{copy}</span></div><span className="check-status">Passed</span></div>)}</div><div className="validation-callout"><CircleAlert size={18} /><span><strong>Important:</strong> this validation checks form quality only. It does not validate an issuer, price, reserve, or live market.</span></div><div className="form-actions"><button className="button button-quiet" type="button" onClick={() => setStep(0)}><ArrowLeft size={17} /> Back</button><button className="button button-primary" type="button" onClick={goNext}>Review market <ArrowRight size={17} /></button></div></div>}
 
-          {step === 2 && <div className="review-view"><div className="section-intro"><p className="eyebrow">Step 03</p><h2>Review and create</h2><p>One last look. This market will be saved to your local Lilune demo.</p></div><dl className="review-list"><div><dt>Market</dt><dd>{form.name} <span>${form.ticker}</span></dd></div><div><dt>Premise</dt><dd>{form.description}</dd></div><div><dt>Quote asset</dt><dd>{selectedQuote.value} <span>{selectedQuote.note}</span></dd></div><div><dt>Economics</dt><dd>{formatNumber(form.supply)} supply <span>·</span> {formatNumber(form.liquidity)} {form.quoteAsset} liquidity</dd></div></dl><div className="review-boundary"><FlaskConical size={19} /><div><strong>Local demo only</strong><p>This market has no financial value and cannot be traded or withdrawn.</p></div></div>{storageError && <p className="storage-error" role="alert">{storageError}</p>}<div className="form-actions"><button className="button button-quiet" type="button" onClick={() => setStep(1)}><ArrowLeft size={17} /> Back</button><button className="button button-primary" type="button" onClick={createMarket}><Sparkles size={17} /> Create local market</button></div></div>}
+          {step === 2 && <div className="review-view"><div className="section-intro"><p className="eyebrow">Step 03</p><h2>Review and create</h2><p>One last look. This market will be saved to your local Lilune demo.</p></div><dl className="review-list"><div><dt>Market</dt><dd>{form.name} <span>${form.ticker}</span></dd></div><div><dt>Premise</dt><dd>{form.description}</dd></div><div><dt>Quote asset</dt><dd>{selectedQuote.value} <span>{selectedQuote.note}</span></dd></div><div><dt>Economics</dt><dd>{formatNumber(form.supply)} supply <span>·</span> {formatNumber(form.liquidity)} {form.quoteAsset} liquidity</dd></div></dl><div className="thesis-card" aria-label="Why this market"><div className="thesis-head"><p className="eyebrow">Why this market</p><span>Your thesis</span></div><p className="thesis-copy">{form.description}</p><div className="thesis-facts"><span><strong>${form.ticker}</strong> market symbol</span><span><strong>{selectedQuote.value}</strong> quote asset</span><span><strong>{formatNumber(form.liquidity)}</strong> initial liquidity</span></div></div><div className="review-boundary"><FlaskConical size={19} /><div><strong>Local demo only</strong><p>This market has no financial value and cannot be traded or withdrawn.</p></div></div>{storageError && <p className="storage-error" role="alert">{storageError}</p>}<div className="form-actions"><button className="button button-quiet" type="button" onClick={() => setStep(1)}><ArrowLeft size={17} /> Back</button><button className="button button-primary" type="button" onClick={createMarket}><Sparkles size={17} /> Create local market</button></div></div>}
         </section>
 
         <aside className="preview-panel" aria-label="Market preview"><div className="preview-top"><span className="preview-label">Live preview</span><span className="demo-chip">DEMO ONLY</span></div><div className="token-art" aria-hidden="true"><div className="orb orb-one" /><div className="orb orb-two" /><div className="orb orb-three" /><span>{(form.ticker || 'LU').slice(0, 2)}</span></div><p className="preview-ticker">${form.ticker || 'TICKER'}</p><h3>{form.name || 'Your market name'}</h3><p className="preview-description">{form.description || 'A concise description will appear here.'}</p><div className="preview-stats"><div><span>Supply</span><strong>{formatNumber(form.supply)}</strong></div><div><span>Liquidity</span><strong>{formatNumber(form.liquidity)} <small>{form.quoteAsset}</small></strong></div></div><KuruReference pulse={kuruPulse} /><div className="preview-foot"><span className="status-dot" />{selectedQuote.value} quote asset <span className="preview-divider" /> local only</div></aside>
