@@ -1028,6 +1028,7 @@ export default function App() {
         )}
         {page === "Launch" && (
           <LaunchStudio
+            kuruPulse={kuruPulse}
             onCreated={() => setToast("Your demo market is ready")}
           />
         )}

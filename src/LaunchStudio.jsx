@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, CircleAlert, FlaskConical, Info, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, CircleAlert, ExternalLink, FlaskConical, Info, Sparkles } from 'lucide-react';
 import './launch.css';
 
 const QUOTE_ASSETS = [
@@ -46,7 +46,7 @@ function validate(form) {
   return errors;
 }
 
-export default function LaunchStudio({ onCreated }) {
+export default function LaunchStudio({ onCreated, kuruPulse }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
@@ -160,7 +160,7 @@ export default function LaunchStudio({ onCreated }) {
           {step === 2 && <div className="review-view"><div className="section-intro"><p className="eyebrow">Step 03</p><h2>Review and create</h2><p>One last look. This market will be saved to your local Lilune demo.</p></div><dl className="review-list"><div><dt>Market</dt><dd>{form.name} <span>${form.ticker}</span></dd></div><div><dt>Premise</dt><dd>{form.description}</dd></div><div><dt>Quote asset</dt><dd>{selectedQuote.value} <span>{selectedQuote.note}</span></dd></div><div><dt>Economics</dt><dd>{formatNumber(form.supply)} supply <span>·</span> {formatNumber(form.liquidity)} {form.quoteAsset} liquidity</dd></div></dl><div className="review-boundary"><FlaskConical size={19} /><div><strong>Local demo only</strong><p>This market has no financial value and cannot be traded or withdrawn.</p></div></div>{storageError && <p className="storage-error" role="alert">{storageError}</p>}<div className="form-actions"><button className="button button-quiet" type="button" onClick={() => setStep(1)}><ArrowLeft size={17} /> Back</button><button className="button button-primary" type="button" onClick={createMarket}><Sparkles size={17} /> Create local market</button></div></div>}
         </section>
 
-        <aside className="preview-panel" aria-label="Market preview"><div className="preview-top"><span className="preview-label">Live preview</span><span className="demo-chip">DEMO ONLY</span></div><div className="token-art" aria-hidden="true"><div className="orb orb-one" /><div className="orb orb-two" /><div className="orb orb-three" /><span>{(form.ticker || 'LU').slice(0, 2)}</span></div><p className="preview-ticker">${form.ticker || 'TICKER'}</p><h3>{form.name || 'Your market name'}</h3><p className="preview-description">{form.description || 'A concise description will appear here.'}</p><div className="preview-stats"><div><span>Supply</span><strong>{formatNumber(form.supply)}</strong></div><div><span>Liquidity</span><strong>{formatNumber(form.liquidity)} <small>{form.quoteAsset}</small></strong></div></div><div className="preview-foot"><span className="status-dot" />{selectedQuote.value} quote asset <span className="preview-divider" /> local only</div></aside>
+        <aside className="preview-panel" aria-label="Market preview"><div className="preview-top"><span className="preview-label">Live preview</span><span className="demo-chip">DEMO ONLY</span></div><div className="token-art" aria-hidden="true"><div className="orb orb-one" /><div className="orb orb-two" /><div className="orb orb-three" /><span>{(form.ticker || 'LU').slice(0, 2)}</span></div><p className="preview-ticker">${form.ticker || 'TICKER'}</p><h3>{form.name || 'Your market name'}</h3><p className="preview-description">{form.description || 'A concise description will appear here.'}</p><div className="preview-stats"><div><span>Supply</span><strong>{formatNumber(form.supply)}</strong></div><div><span>Liquidity</span><strong>{formatNumber(form.liquidity)} <small>{form.quoteAsset}</small></strong></div></div><KuruReference pulse={kuruPulse} /><div className="preview-foot"><span className="status-dot" />{selectedQuote.value} quote asset <span className="preview-divider" /> local only</div></aside>
       </div>
       <SavedMarkets markets={savedMarkets} />
     </section>
@@ -174,4 +174,17 @@ function Field({ label, inputId, hint, error, children }) {
 function SavedMarkets({ markets }) {
   if (!markets.length) return null;
   return <section className="saved-markets" aria-labelledby="saved-markets-title"><div className="saved-markets-head"><div><p className="eyebrow">Your studio</p><h2 id="saved-markets-title">Saved local markets</h2></div><span>{markets.length} {markets.length === 1 ? 'market' : 'markets'}</span></div><div className="saved-market-list">{markets.map((market) => <article className="saved-market" key={market.id || `${market.name}-${market.ticker}`}><div className="saved-market-icon">{String(market.ticker || 'LU').slice(0, 2)}</div><div><strong>{market.name || 'Untitled market'}</strong><span>${market.ticker || '—'}</span></div><span className="saved-market-quote">{market.quoteAsset || '—'} quote asset</span></article>)}</div></section>;
+}
+
+function KuruReference({ pulse }) {
+  const data = pulse?.data;
+  return <section className="launch-kuru-reference" aria-label="Kuru market reference" aria-live="polite">
+    <div className="launch-kuru-head"><span>Market reference</span><strong>KURU</strong></div>
+    {pulse?.status === 'ready' && data ? <>
+      <div className="launch-kuru-value"><strong>MON / USDC</strong><b>{data.lastPrice.toFixed(4)}</b></div>
+      <div className="launch-kuru-meta"><span className={data.changePercent >= 0 ? 'positive' : 'negative'}>{data.changePercent >= 0 ? '+' : ''}{data.changePercent.toFixed(2)}% 24h</span><span>{Number.isFinite(data.volume24h) ? '$' + (data.volume24h / 1e6).toFixed(2) + 'M' : '—'} volume</span></div>
+      <a href="https://www.kuru.io/markets" target="_blank" rel="noreferrer">Open Kuru markets <ExternalLink size={12} /></a>
+    </> : pulse?.status === 'error' ? <p className="launch-kuru-unavailable">Kuru context is unavailable right now. Your local draft is still usable.</p> : <p className="launch-kuru-unavailable">Reading Kuru’s live market context…</p>}
+    <small>Reference only · this launch stays local</small>
+  </section>;
 }
