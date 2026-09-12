@@ -760,6 +760,22 @@ export default function App() {
               </div>
               <span className="pill">Demo trading · No real funds</span>
             </div>
+            {kuruPulse.status === "ready" && kuruPulse.data && (
+              <section className="kuru-trade-context" aria-label="Live Kuru market context">
+                <div className="kuru-trade-context-copy">
+                  <span className="pulse-eyebrow">LIVE MARKET CONTEXT</span>
+                  <strong>MON / USDC</strong>
+                  <small>Reference liquidity from Kuru’s market index</small>
+                </div>
+                <div className="kuru-trade-context-metrics">
+                  <span><b>{kuruPulse.data.lastPrice.toFixed(4)}</b><small>last price</small></span>
+                  <span><b className={kuruPulse.data.changePercent >= 0 ? "positive" : "negative"}>{kuruPulse.data.changePercent >= 0 ? "+" : ""}{kuruPulse.data.changePercent.toFixed(2)}%</b><small>24h move</small></span>
+                  <span><b>{Number.isFinite(kuruPulse.data.volume24h) ? "$" + (kuruPulse.data.volume24h / 1e6).toFixed(2) + "M" : "—"}</b><small>24h volume</small></span>
+                  <span><b>{kuruPulse.data.tradeCount.toLocaleString()}</b><small>24h trades</small></span>
+                </div>
+                <a className="kuru-trade-context-link" href="https://www.kuru.io/markets" target="_blank" rel="noreferrer">Open Kuru <ExternalLink size={13} /></a>
+              </section>
+            )}
             <div className="trade-layout">
               <section className="trade-main">
                 <div className="asset-selector">
