@@ -1,1 +1,26 @@
-{"name":"lilune","private":true,"version":"0.1.0","type":"module","scripts":{"dev":"vite --host 127.0.0.1","build":"vite build","preview":"vite preview --host 127.0.0.1","start":"node server.mjs"},"dependencies":{"@category-labs/mera":"^0.2.0","@scure/bip32":"^2.4.0","@scure/bip39":"^2.4.0","lucide-react":"^0.468.0","react":"^19.1.1","react-dom":"^19.1.1","viem":"^2.56.3"},"devDependencies":{"vite":"^7.1.3"}}
+{
+  "name": "lilune",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "start": "node server.mjs",
+    "compile:token": "node scripts/compile-token.mjs"
+  },
+  "dependencies": {
+    "@category-labs/mera": "^0.2.0",
+    "@scure/bip32": "^2.4.0",
+    "@scure/bip39": "^2.4.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "viem": "^2.56.3"
+  },
+  "devDependencies": {
+    "solc": "^0.8.24",
+    "vite": "^7.1.3"
+  }
+}

@@ -3,7 +3,7 @@ const chartBase = "/api/kuru";
 
 const periodConfig = {
   "1D": { interval: "30m", span: 24 * 60 * 60 * 1000 },
-  "1W": { interval: "6h", span: 7 * 24 * 60 * 60 * 1000 },
+  "1W": { interval: "4h", span: 7 * 24 * 60 * 60 * 1000 },
   "1M": { interval: "1d", span: 30 * 24 * 60 * 60 * 1000 },
   "1Y": { interval: "1w", span: 365 * 24 * 60 * 60 * 1000 },
 };

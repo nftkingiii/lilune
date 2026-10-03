@@ -22,13 +22,14 @@ import AccountMenu from './AccountMenu';
 import ChoiceMenu from './ChoiceMenu';
 import TradingChart from './TradingChart';
 import './menus.css';
-import {
-  createMeraAccount,
-  endMeraSession,
-  restoreMeraAccount,
-  sendMeraSelfCheck,
-  MONAD_TESTNET_CHAIN_ID,
-} from "./meraWallet";
+import { MONAD_FAUCET, MONAD_TESTNET_CHAIN_ID, explorerTx } from "./chain";
+import { products, companyName } from "./products";
+// The wallet stack (Mera, viem, bip32/39) is only needed once someone connects,
+// so it loads on demand instead of shipping in the first bundle.
+const loadMera = () => import("./meraWallet");
+const endMeraSession = (session) => {
+  if (session) loadMera().then((mera) => mera.endMeraSession(session));
+};
 import { fetchKuruMarketChart, fetchKuruMonadPulse } from "./kuruMarkets";
 const read = (key, fallback) => {
   try {
@@ -70,6 +71,10 @@ const liveKuruAsset = {
   volume: "—",
   isLive: true,
 };
+const tradeable = [liveKuruAsset, ...assets];
+const findAsset = (symbol) => tradeable.find((a) => a.symbol === symbol);
+const unitLabel = (symbol) => (symbol === "MON_USDC" ? "demo MON" : "demo shares");
+const trendClass = (change) => (change > 0 ? "positive" : change < 0 ? "negative" : "neutral");
 function Mark({ asset, size = "" }) {
   return (
     <span
@@ -275,6 +280,7 @@ export default function App() {
     setMeraError("");
     try {
       const saved = read("lilune-mera-meta", null);
+      const { createMeraAccount, restoreMeraAccount } = await loadMera();
       const connected = saved
         ? await restoreMeraAccount(saved)
         : await createMeraAccount();
@@ -297,6 +303,7 @@ export default function App() {
     setProofStatus("pending");
     setProofHash("");
     try {
+      const { sendMeraSelfCheck } = await loadMera();
       const { hash } = await sendMeraSelfCheck(mera.account);
       setProofHash(hash);
       setProofStatus("confirmed");
@@ -309,6 +316,13 @@ export default function App() {
           : "failed",
       );
     }
+  }
+  async function deployMeraToken(params) {
+    const { deployMeraToken: deploy, readBalance } = await loadMera();
+    const result = await deploy(mera.account, params);
+    const balance = await readBalance(mera.address);
+    setMera((current) => (current ? { ...current, balance } : current));
+    return result;
   }
   useEffect(() => {
     const fn = (e) => {
@@ -385,9 +399,12 @@ export default function App() {
       value > 0 &&
       (side === "Buy" ? value + fee <= balance : qty <= owned) &&
       livePrice > 0 && Number.isFinite(qty),
+    monPrice = kuruPulse.data?.lastPrice || kuruChart.data.at(-1)?.close || 0,
+    priceOf = (symbol) => (symbol === "MON_USDC" ? monPrice : findAsset(symbol)?.price || 0),
+    held = tradeable.filter((a) => (holdings[a.symbol] || 0) > 0.000001),
     total =
       balance +
-      assets.reduce((s, a) => s + (holdings[a.symbol] || 0) * a.price, 0);
+      held.reduce((s, a) => s + holdings[a.symbol] * priceOf(a.symbol), 0);
   async function confirm() {
     if (!valid || pending) return;
     setPending(true);
@@ -555,8 +572,13 @@ export default function App() {
                     with context before you decide what deserves your attention.
                   </p>
                 </div>
-                <span className="pulse-source">
-                  <span className="status-dot" /> Kuru feed
+                <span className={"pulse-source " + kuruPulse.status}>
+                  <span className="status-dot" />{" "}
+                  {kuruPulse.status === "ready"
+                    ? "Kuru feed live"
+                    : kuruPulse.status === "error"
+                      ? "Kuru feed offline"
+                      : "Connecting to Kuru"}
                 </span>
               </div>
               {kuruPulse.status === "loading" && (
@@ -695,7 +717,7 @@ export default function App() {
                       <div className="company-bottom">
                         <strong>{money(a.price)}</strong>
                         <span
-                          className={a.change >= 0 ? "positive" : "negative"}
+                          className={trendClass(a.change)}
                         >
                           {a.change >= 0 ? "↗" : "↘"}{" "}
                           {Math.abs(a.change).toFixed(2)}%
@@ -848,7 +870,7 @@ export default function App() {
                 <div className="price-display">
                   {isKuruLive ? `$${livePrice.toFixed(4)}` : money(selected.price)}
                   <span
-                    className={liveChange > 0 ? "positive" : "negative"}
+                    className={trendClass(liveChange)}
                   >
                     {liveChange > 0 ? "+" : ""}
                     {Number(liveChange).toFixed(2)}% <small>{isKuruLive ? "24h live" : "sample day"}</small>
@@ -913,7 +935,7 @@ export default function App() {
                       {mera.balance.raw === "0" && (
                         <a
                           className="fund-link"
-                          href="https://faucet.monad.xyz/"
+                          href={MONAD_FAUCET}
                           target="_blank"
                           rel="noreferrer"
                         >
@@ -941,9 +963,11 @@ export default function App() {
                     </div>
                     {proofStatus !== "idle" && (
                       <small className={"proof-state " + proofStatus}>
-                        {proofStatus === "confirmed"
-                          ? "Confirmed · " + proofHash.slice(0, 12) + "…"
-                          : proofStatus === "rejected"
+                        {proofStatus === "confirmed" ? (
+                          <a href={explorerTx(proofHash)} target="_blank" rel="noreferrer">
+                            Confirmed · {proofHash.slice(0, 12)}… <ExternalLink size={11} />
+                          </a>
+                        ) : proofStatus === "rejected"
                             ? "Signature rejected"
                             : proofStatus === "failed"
                               ? "Transaction failed"
@@ -959,7 +983,9 @@ export default function App() {
                   >
                     <Wallet size={16} />
                     <span>
-                      {meraBusy ? "Opening passkey…" : "Connect Mera to trade"}
+                      {meraBusy
+                        ? "Opening passkey…"
+                        : "Connect Mera for Monad testnet"}
                     </span>
                     <ArrowRight size={15} />
                   </button>
@@ -1011,7 +1037,7 @@ export default function App() {
                       setAmount(
                         (side === "Buy"
                           ? Math.floor((balance / 1.001) * 100) / 100
-                          : Math.floor(owned * selected.price * 100) / 100
+                          : Math.floor(owned * livePrice * 100) / 100
                         ).toFixed(2),
                       )
                     }
@@ -1041,6 +1067,11 @@ export default function App() {
                     </strong>
                   </span>
                 </div>
+                <p className="ticket-mera-note">
+                  {mera
+                    ? "Demo orders below don’t touch your Mera account. Deploy a real testnet token in Launch."
+                    : "Demo orders don’t need a wallet. Mera adds a real Monad testnet account for onchain proofs and token launches."}
+                </p>
                 {!valid && amount !== "" && (
                   <p className="form-error">
                     {value <= 0
@@ -1067,7 +1098,17 @@ export default function App() {
         {page === "Launch" && (
           <LaunchStudio
             kuruPulse={kuruPulse}
-            onCreated={() => setToast("Your demo market is ready")}
+            wallet={mera}
+            walletBusy={meraBusy}
+            onConnect={connectMera}
+            onDeploy={deployMeraToken}
+            onCreated={(market) =>
+              setToast(
+                market.mode === "monad-testnet"
+                  ? `$${market.ticker} deployed on Monad testnet`
+                  : "Your local draft is saved",
+              )
+            }
           />
         )}
         {page === "Portfolio" && (
@@ -1091,29 +1132,31 @@ export default function App() {
               </div>
               <span className="portfolio-orbit">✦</span>
               <div>
-                <span>Companies held</span>
+                <span>Positions held</span>
                 <h3>
-                  {Object.values(holdings).filter((v) => v > 0.000001).length}
+                  {held.length}
                 </h3>
                 <span>Local practice portfolio</span>
               </div>
             </div>
             <h2 className="section-title">Your holdings</h2>
-            {assets.filter((a) => (holdings[a.symbol] || 0) > 0.000001)
-              .length ? (
+            {held.length ? (
               <div className="holdings">
-                {assets
-                  .filter((a) => (holdings[a.symbol] || 0) > 0.000001)
-                  .map((a) => (
+                {held.map((a) => (
                     <button key={a.symbol} onClick={() => trade(a)}>
                       <Mark asset={a} />
                       <span>
                         <strong>{a.name}</strong>
                         <small>
-                          {holdings[a.symbol].toFixed(5)} demo shares
+                          {holdings[a.symbol].toFixed(5)} {unitLabel(a.symbol)}
+                          {a.isLive && " · valued at live Kuru price"}
                         </small>
                       </span>
-                      <strong>{money(holdings[a.symbol] * a.price)}</strong>
+                      <strong>
+                        {priceOf(a.symbol) > 0
+                          ? money(holdings[a.symbol] * priceOf(a.symbol))
+                          : "Price loading"}
+                      </strong>
                       <ArrowRight size={17} />
                     </button>
                   ))}
@@ -1141,7 +1184,7 @@ export default function App() {
                         {a.side === "Buy" ? "Bought" : "Sold"} {a.symbol}
                       </strong>
                       <small>
-                        {a.quantity.toFixed(5)} demo shares ·{" "}
+                        {a.quantity.toFixed(5)} {unitLabel(a.symbol)} ·{" "}
                         {new Date(a.id).toLocaleDateString()}
                       </small>
                     </span>
@@ -1168,7 +1211,7 @@ export default function App() {
           <span className="brand-star">✦</span> lilune
         </a>
         <span>Made for your kind of curious.</span>
-        <span>Design prototype · Demo assets only</span>
+        <span>Demo stocks · Real tokens on Monad testnet</span>
         <span className="footer-monad">◇ Inspired by Monad</span>
       </footer>
       {toast && (
@@ -1257,57 +1300,73 @@ export default function App() {
                   Pick the tools you use. We'll connect the dots to the
                   companies behind them.
                 </p>
-                <div className="stack-options">
-                  {[
-                    "ChatGPT",
-                    "YouTube",
-                    "iPhone",
-                    "Xbox",
-                    "Instagram",
-                    "AWS",
-                  ].map((c) => (
-                    <button
-                      className={choices.includes(c) ? "chosen" : ""}
-                      key={c}
-                      onClick={() =>
-                        setChoices((v) =>
-                          v.includes(c) ? v.filter((x) => x !== c) : [...v, c],
-                        )
-                      }
-                    >
-                      {c}
-                      {choices.includes(c) ? (
-                        <Check size={17} />
-                      ) : (
-                        <Plus size={17} />
-                      )}
-                    </button>
+                <div className="stack-groups">
+                  {["AI", "Everyday", "Culture", "Building"].map((group) => (
+                    <div key={group}>
+                      <small>{group}</small>
+                      <div className="stack-options">
+                        {products
+                          .filter((p) => p.group === group)
+                          .map(({ name: c }) => (
+                            <button
+                              className={choices.includes(c) ? "chosen" : ""}
+                              key={c}
+                              aria-pressed={choices.includes(c)}
+                              onClick={() =>
+                                setChoices((v) =>
+                                  v.includes(c) ? v.filter((x) => x !== c) : [...v, c],
+                                )
+                              }
+                            >
+                              {c}
+                              {choices.includes(c) ? (
+                                <Check size={15} />
+                              ) : (
+                                <Plus size={15} />
+                              )}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
+                {choices.length > 0 && (
+                  <ul className="stack-connections" aria-label="How your picks connect">
+                    {products
+                      .filter((p) => choices.includes(p.name))
+                      .flatMap((p) =>
+                        p.links.map(([symbol, why]) => (
+                          <li key={p.name + symbol}>
+                            <strong>{p.name}</strong>
+                            <ArrowRight size={12} />
+                            <strong>{companyName(symbol)}</strong>
+                            <span>{why}</span>
+                          </li>
+                        )),
+                      )}
+                  </ul>
+                )}
                 <p className="ticket-note">
                   These are company relationships, not investment
-                  recommendations. OpenAI is private; NVIDIA and Microsoft are
-                  related infrastructure companies.
+                  recommendations. Some products, like ChatGPT and Claude,
+                  come from private companies; we show the public companies
+                  connected to them.
                 </p>
                 <button
                   className="primary full"
                   disabled={!choices.length}
                   onClick={() => {
-                    const map = {
-                      ChatGPT: ["NVDA", "MSFT"],
-                      YouTube: ["GOOGL"],
-                      iPhone: ["AAPL"],
-                      Xbox: ["MSFT"],
-                      Instagram: ["META"],
-                      AWS: ["AMZN"],
-                    };
-                    setWatch((w) => [
-                      ...new Set([...w, ...choices.flatMap((c) => map[c])]),
-                    ]);
+                    const picked = products
+                      .filter((p) => choices.includes(p.name))
+                      .flatMap((p) => p.links.map(([symbol]) => symbol));
+                    const unique = [...new Set(picked)];
+                    setWatch((w) => [...new Set([...w, ...unique])]);
                     setCategory("Watchlist");
                     setPage("Discover");
                     setStack(false);
-                    setToast("Your companies are waiting in your watchlist");
+                    setToast(
+                      `${unique.length} ${unique.length === 1 ? "company" : "companies"} added to your watchlist`,
+                    );
                   }}
                 >
                   Discover my companies <ArrowRight size={17} />

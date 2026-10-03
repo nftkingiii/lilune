@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Wallet, Copy, Check, ChevronDown, UserRound, Settings, LogOut, ArrowLeft, ExternalLink, RefreshCw } from 'lucide-react';
-import { readBalance } from './meraWallet';
+import { explorerAddress, MONAD_FAUCET } from './chain';
 
 export default function AccountMenu({ wallet, onDisconnect, chartType, onChartType, onBalance }) {
   const [open, setOpen] = useState(false), [view, setView] = useState('menu');
   const [copied, setCopied] = useState(false), [busy, setBusy] = useState(false);
   const [balance, setBalance] = useState(wallet.balance), [error, setError] = useState('');
   const root = useRef(null), trigger = useRef(null), timer = useRef(null);
+  useEffect(() => setBalance(wallet.balance), [wallet.balance]);
   function close() { setOpen(false); setView('menu'); }
   useEffect(() => {
     const outside = e => { if (!root.current?.contains(e.target)) close(); };
@@ -19,7 +20,7 @@ export default function AccountMenu({ wallet, onDisconnect, chartType, onChartTy
   }
   async function refresh() {
     setBusy(true);
-    try { const next = await readBalance(wallet.address); setBalance(next); onBalance(next); } finally { setBusy(false); }
+    try { const { readBalance } = await import('./meraWallet'); const next = await readBalance(wallet.address); setBalance(next); onBalance(next); } finally { setBusy(false); }
   }
   const short = wallet.address.slice(0, 6) + '…' + wallet.address.slice(-4);
   return <div className="account-root" ref={root} onKeyDown={e => {
@@ -37,7 +38,7 @@ export default function AccountMenu({ wallet, onDisconnect, chartType, onChartTy
         <div className="account-identity"><span className="profile-orb">M</span><div><strong>Your Lilune account</strong><small>Connected with Mera</small></div><span className="connection-dot" aria-label="Connected"/></div>
         <div className="wallet-balance"><span>Monad testnet balance</span><strong>{balance.formatted}{balance.raw !== null && <small> MON</small>}</strong><button onClick={refresh} disabled={busy} aria-label="Refresh wallet balance"><RefreshCw size={15} className={busy ? 'spin' : ''}/></button></div>
         <button className="copy-address" onClick={copy}><span>{copied ? 'Address copied' : short}</span>{copied ? <Check size={16}/> : <Copy size={16}/>}</button>
-        {view === 'profile' && <div className="profile-details"><label htmlFor="full-address">Your testnet address</label><textarea id="full-address" readOnly value={wallet.address} onFocus={e => e.target.select()}/><p>Receive testnet MON at this address. Test tokens have no monetary value.</p><div className="profile-links"><a href="https://faucet.monad.xyz/" target="_blank" rel="noreferrer">Get testnet MON <ExternalLink size={14}/></a><a href={'https://testnet.monadscan.com/address/' + wallet.address} target="_blank" rel="noreferrer">View on Monadscan <ExternalLink size={14}/></a></div></div>}
+        {view === 'profile' && <div className="profile-details"><label htmlFor="full-address">Your testnet address</label><textarea id="full-address" readOnly value={wallet.address} onFocus={e => e.target.select()}/><p>Receive testnet MON at this address. Test tokens have no monetary value.</p><div className="profile-links"><a href={MONAD_FAUCET} target="_blank" rel="noreferrer">Get testnet MON <ExternalLink size={14}/></a><a href={explorerAddress(wallet.address)} target="_blank" rel="noreferrer">View on Monadscan <ExternalLink size={14}/></a></div></div>}
         {view === 'menu' && <div className="account-actions"><button onClick={() => setView('profile')}><UserRound size={17}/><span>Profile<small>Address and network details</small></span></button><button onClick={() => setView('settings')}><Settings size={17}/><span>Settings<small>Make Lilune feel like you</small></span></button></div>}
       </> : <div className="account-settings"><h3>Your view, your way.</h3><p>Default trading chart</p><div className="chart-switch">{['line','candles'].map(type => <button key={type} aria-pressed={chartType === type} onClick={() => onChartType(type)}>{type === 'line' ? 'Line' : 'Candles'}</button>)}</div><p>Saved in this browser. Your passkey stays with your passkey provider.</p></div>}
       {error && <p role="alert">{error}</p>}

@@ -15,15 +15,16 @@ import {
   formatEther,
   http,
 } from "viem";
+import { MONAD_EXPLORER, MONAD_TESTNET_CHAIN_ID } from "./chain";
+import { deployLiluneToken } from "./launchToken";
 
-export const MONAD_TESTNET_CHAIN_ID = 10143;
 export const monadTestnet = defineChain({
   id: MONAD_TESTNET_CHAIN_ID,
   name: "Monad Testnet",
   nativeCurrency: { name: "Monad", symbol: "MON", decimals: 18 },
   rpcUrls: { default: { http: ["https://testnet-rpc.monad.xyz"] } },
   blockExplorers: {
-    default: { name: "Monadscan", url: "https://testnet.monadscan.com" },
+    default: { name: "Monadscan", url: MONAD_EXPLORER },
   },
 });
 
@@ -131,14 +132,14 @@ export function endMeraSession(session) {
   session?.end?.();
 }
 
+function walletFor(account) {
+  return createWalletClient({ account, chain: monadTestnet, transport: http() });
+}
+
 export async function sendMeraSelfCheck(account) {
   if (!account?.address)
     throw new Error("Connect Mera before sending a proof.");
-  const walletClient = createWalletClient({
-    account,
-    chain: monadTestnet,
-    transport: http(),
-  });
+  const walletClient = walletFor(account);
   const hash = await walletClient.sendTransaction({
     account,
     to: account.address,
@@ -146,4 +147,13 @@ export async function sendMeraSelfCheck(account) {
   });
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
   return { hash, receipt };
+}
+
+export async function deployMeraToken(account, params) {
+  if (!account?.address)
+    throw new Error("Connect Mera before deploying.");
+  return deployLiluneToken(
+    { walletClient: walletFor(account), publicClient, account },
+    params,
+  );
 }
