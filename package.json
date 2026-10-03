@@ -22,5 +22,8 @@
   "devDependencies": {
     "solc": "^0.8.24",
     "vite": "^7.1.3"
+  },
+  "overrides": {
+    "tmp": "^0.2.7"
   }
 }
