@@ -52,12 +52,32 @@ function safePath(urlPath) {
     : null;
 }
 
+// Mera keeps a signing key in page memory while connected, so the page only
+// runs its own scripts and only talks to the origins it needs.
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data:",
+  "connect-src 'self' https://api.kuru.io https://testnet-rpc.monad.xyz",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join("; ");
+
 function headers(type) {
   return {
     "Cache-Control": type === "text/html; charset=utf-8" ? "no-cache" : "public, max-age=31536000, immutable",
     "Content-Type": type,
+    "Content-Security-Policy": contentSecurityPolicy,
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), publickey-credentials-create=(self), publickey-credentials-get=(self)",
     "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Strict-Transport-Security": "max-age=31536000",
     "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
   };
 }
 

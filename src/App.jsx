@@ -22,7 +22,14 @@ import AccountMenu from './AccountMenu';
 import ChoiceMenu from './ChoiceMenu';
 import TradingChart from './TradingChart';
 import './menus.css';
-import { MONAD_FAUCET, MONAD_TESTNET_CHAIN_ID, explorerTx } from "./chain";
+import {
+  MARKET_DATA_NETWORK,
+  MONAD_FAUCET,
+  MONAD_MAINNET_EXPLORER,
+  MONAD_TESTNET_CHAIN_ID,
+  WALLET_NETWORK,
+  explorerTx,
+} from "./chain";
 import { products, companyName } from "./products";
 // The wallet stack (Mera, viem, bip32/39) is only needed once someone connects,
 // so it loads on demand instead of shipping in the first bundle.
@@ -75,6 +82,42 @@ const tradeable = [liveKuruAsset, ...assets];
 const findAsset = (symbol) => tradeable.find((a) => a.symbol === symbol);
 const unitLabel = (symbol) => (symbol === "MON_USDC" ? "demo MON" : "demo shares");
 const trendClass = (change) => (change > 0 ? "positive" : change < 0 ? "negative" : "neutral");
+function NetworkStrip({ pulse, wallet }) {
+  const market = pulse.data?.marketAddress;
+  return (
+    <div className="network-strip" role="note" aria-label="Networks used by Lilune">
+      <span className={"network-item mainnet " + pulse.status}>
+        <span className="network-dot" />
+        <span>
+          Market data <b>Kuru · {MARKET_DATA_NETWORK}</b>
+        </span>
+        {market && (
+          <a
+            href={`${MONAD_MAINNET_EXPLORER}/address/${market}`}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="View the Kuru MON/USDC market contract on Monad mainnet"
+          >
+            <ExternalLink size={11} />
+          </a>
+        )}
+      </span>
+      <span className="network-item testnet">
+        <span className="network-dot" />
+        <span>
+          Wallet &amp; launches <b>{WALLET_NETWORK}</b>
+          {!wallet && <em> · connect Mera to use</em>}
+        </span>
+      </span>
+      <span className="network-item demo">
+        <span className="network-dot" />
+        <span>
+          Stocks <b>Demo only</b>
+        </span>
+      </span>
+    </div>
+  );
+}
 function Mark({ asset, size = "" }) {
   return (
     <span
@@ -476,6 +519,7 @@ export default function App() {
           )}
         </div>
       </header>
+      <NetworkStrip pulse={kuruPulse} wallet={mera} />
       <main>
         {page === "Discover" && (
           <>
@@ -849,7 +893,7 @@ export default function App() {
                   <div>
                     <h2>{selected.name}</h2>
                     <span className="muted">
-                      {isKuruLive ? "MON_USDC · Live Kuru market" : `${selected.symbol} · Illustrative stock asset`}
+                      {isKuruLive ? `MON_USDC · Live Kuru market on ${MARKET_DATA_NETWORK}` : `${selected.symbol} · Illustrative stock asset`}
                     </span>
                   </div>
                   <button
@@ -925,8 +969,8 @@ export default function App() {
                       <span>
                         <strong>Mera ready</strong>
                         <small>
-                          {mera.address.slice(0, 10)}… · Chain{" "}
-                          {MONAD_TESTNET_CHAIN_ID}
+                          {mera.address.slice(0, 10)}… · {WALLET_NETWORK} (
+                          {MONAD_TESTNET_CHAIN_ID})
                         </small>
                       </span>
                     </div>
@@ -1212,7 +1256,7 @@ export default function App() {
         </a>
         <span>Made for your kind of curious.</span>
         <span>Demo stocks · Real tokens on Monad testnet</span>
-        <span className="footer-monad">◇ Inspired by Monad</span>
+        <span className="footer-monad">◇ Built on Monad</span>
       </footer>
       {toast && (
         <div className="toast" role="status">

@@ -30,6 +30,10 @@ Stock prices and stock trades are illustrative and stay in the browser. Two part
 | Stock prices, stock charts, demo trades and demo cash | | ✓ |
 | Launch liquidity and quote asset (planned values; no pool is created) | | ✓ |
 
+A strip under the header shows which network each part uses: Kuru market data comes from Monad mainnet, while Mera wallets and launches stay on Monad testnet.
+
+**Security.** `server.mjs` serves a strict Content-Security-Policy: only Lilune's own scripts run, and the page can only connect to Kuru's API and the Monad testnet RPC. That matters because a connected Mera account keeps its signing key in page memory, so injected scripts or data exfiltration are blocked by the browser.
+
 ## Run
 
 Node.js 22 or newer. Run `npm install`, then `npm run dev`. `npm run build` produces the static app in `dist`, and `npm start` serves it with the Kuru market-data proxy (`server.mjs`). Passkeys need `localhost` or HTTPS.
