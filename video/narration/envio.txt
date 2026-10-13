@@ -1,0 +1,6 @@
+01|Lilune's Launch Studio deploys real tokens on Monad testnet. Envio HyperSync is how every launch becomes visible to everyone.
+02|Each Lilune token emits a Lilune Launched event from its constructor. One HyperSync query for that event finds every launch on Monad testnet, with no factory contract and no database.
+03|Lilune keeps only events emitted by the token's own deployment transaction, so the feed can't be spoofed.
+04|A second query replays every transfer of those tokens, to count holders and work out what the connected account holds.
+05|Here it is end to end. Mera signs the deployment. Seconds later, HyperSync has indexed it, and Launched on Lilune shows the new token, tagged yours, with its holders.
+06|The query runs on Lilune's server, so the Envio token never reaches the browser. Envio HyperSync is the data layer behind Launched on Lilune.

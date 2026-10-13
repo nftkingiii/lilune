@@ -1,0 +1,9 @@
+01|Millions of people have strong opinions about the products they use every day. ChatGPT. YouTube. Xbox. AWS.
+02|But most of them have never owned a stock or a token. Onchain trading loses them on the first screen: seed phrases, wallet extensions, walls of tickers.
+03|Lilune starts somewhere else: with what you already use.
+04|Pick your products, and Lilune shows the companies behind them, and why. Then practice on live Kuru market data from Monad, with nothing at stake.
+05|When you're ready, Mera gives you a Monad account from a passkey. No seed phrase, no extension.
+06|And Launch Studio lets anyone turn a thesis into a real token on Monad testnet, indexed by Envio so the whole community can find it.
+07|Why Monad? Fast, cheap transactions make small, curious first trades practical, and Kuru's order book gives new traders real markets to grow into.
+08|Next, we're turning on real Kuru order execution, signed by Mera.
+09|Lilune is built by nftking. Start with curiosity, not complexity.

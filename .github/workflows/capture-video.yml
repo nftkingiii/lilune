@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches: [claude/new-session-1fnzq6]
-    paths: [video/capture.mjs, video/narration/**, .github/workflows/capture-video.yml]
+    paths: [video/capture.mjs, .github/workflows/capture-video.yml]
 
 permissions:
   contents: write
@@ -37,28 +37,37 @@ jobs:
         run: node video/capture.mjs
         env:
           GITHUB_TOKEN: ${{ github.token }}
-      - name: Voice the narration
-        run: |
-          mkdir -p video/out/voice video/out/model
-          base=https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/high
-          curl -sSL -o video/out/model/en_US-lessac-high.onnx $base/en_US-lessac-high.onnx
-          curl -sSL -o video/out/model/en_US-lessac-high.onnx.json $base/en_US-lessac-high.onnx.json
-          python - <<'PY'
-          import wave
-          from piper import PiperVoice
-          voice = PiperVoice.load("video/out/model/en_US-lessac-high.onnx")
-          for line in open("video/narration/demo.txt", encoding="utf-8"):
-              key, text = line.rstrip("\n").split("|", 1)
-              with wave.open(f"video/out/voice/demo-{key}.wav", "wb") as out:
-                  (voice.synthesize_wav if hasattr(voice, "synthesize_wav") else voice.synthesize)(text, out)
-              print("voiced", key)
-          PY
-      - name: Publish to the video-capture branch
+      - name: Publish footage to the video-capture branch
         run: |
           cd video/out
           git init -q -b video-capture
-          git config user.name "github-actions"
-          git config user.email "github-actions@users.noreply.github.com"
-          git add -A
-          git commit -qm "Demo footage captured from the live site"
+          git -c user.name=github-actions -c user.email=github-actions@users.noreply.github.com add -A
+          git -c user.name=github-actions -c user.email=github-actions@users.noreply.github.com commit -qm "Demo footage captured from the live site"
           git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" video-capture
+      - name: Voice the narration
+        if: always()
+        run: |
+          mkdir -p video/voice /tmp/piper
+          base=https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/high
+          curl -sSL -o /tmp/piper/voice.onnx $base/en_US-lessac-high.onnx
+          curl -sSL -o /tmp/piper/voice.onnx.json $base/en_US-lessac-high.onnx.json
+          python - <<'PY'
+          import glob, os, wave
+          from piper import PiperVoice
+          voice = PiperVoice.load("/tmp/piper/voice.onnx")
+          speak = voice.synthesize_wav if hasattr(voice, "synthesize_wav") else voice.synthesize
+          for path in sorted(glob.glob("video/narration/*.txt")):
+              film = os.path.basename(path)[:-4]
+              for line in open(path, encoding="utf-8"):
+                  if "|" not in line:
+                      continue
+                  key, text = line.rstrip("\n").split("|", 1)
+                  with wave.open(f"video/voice/{film}-{key}.wav", "wb") as out:
+                      speak(text, out)
+                  print("voiced", film, key)
+          PY
+          cd video/voice
+          git init -q -b video-voice
+          git -c user.name=github-actions -c user.email=github-actions@users.noreply.github.com add -A
+          git -c user.name=github-actions -c user.email=github-actions@users.noreply.github.com commit -qm "Narration voiced with Piper (en_US lessac high)"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" video-voice

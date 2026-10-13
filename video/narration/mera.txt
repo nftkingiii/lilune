@@ -1,0 +1,5 @@
+01|In Lilune, Mera is the whole account layer. There is no wallet extension and no seed phrase anywhere in the app.
+02|Click Connect Mera and confirm with a passkey. Lilune derives a Monad testnet account on the device, from the passkey itself.
+03|The account menu shows the address, the testnet balance, the faucet and Monadscan. Only non-secret details are stored. Private keys never are.
+04|Every onchain action signs through Mera. In Launch, deploying a token is one click, and Mera signs a real deployment on Monad testnet.
+05|Because a connected session holds a key in memory, Lilune serves a strict content security policy, so injected scripts can't reach it. Mera on Monad: onchain with one passkey.

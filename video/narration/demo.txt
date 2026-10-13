@@ -4,7 +4,7 @@
 04|The Monad market pulse is live. This is Kuru's MON and USDC market on Monad mainnet: price, twenty-four hour move, volume and trades.
 05|In Trade, choose MON and USDC. These are real Kuru candles. Switch the period, switch to candles.
 06|Place a demo buy. The review shows the fee and checks your balance, and the portfolio values it at the live Kuru price.
-07|Now connect Mera. One passkey prompt, and Lilune derives a Monad testnet account right on the device. No seed phrase, no extension.
+07|Now connect Mera. Confirm with a passkey, and Lilune derives a Monad testnet account right on the device. No seed phrase, no extension.
 08|In Launch, write a thesis market: a name, a ticker and a premise. Lilune checks it, and tells you exactly what deploying will and won't do.
 09|Deploy. Mera signs a real token deployment on Monad testnet, and the premise is stored in the contract.
 10|Seconds later, Envio HyperSync has indexed it. Launched on Lilune lists every launch, its holders, and what your account holds.
