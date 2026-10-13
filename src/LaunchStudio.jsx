@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, CircleAlert, Copy, ExternalLink, FlaskConical, Info, Rocket, Share2, Sparkles, Wallet } from 'lucide-react';
 import { explorerAddress, explorerTx, MONAD_FAUCET } from './chain';
+import LaunchFeed from './LaunchFeed';
 import './launch.css';
 
 const QUOTE_ASSETS = [
@@ -169,6 +170,7 @@ export default function LaunchStudio({ onCreated, kuruPulse, wallet, walletBusy,
           </button>
         </div>
         {shareStatus && <p className="share-status" role="status"><Copy size={13} /> {shareStatus}</p>}
+        {created.mode === 'monad-testnet' && <LaunchFeed account={wallet?.address} refreshKey={created.txHash} />}
       </section>
     );
   }
@@ -219,6 +221,7 @@ export default function LaunchStudio({ onCreated, kuruPulse, wallet, walletBusy,
         <aside className="preview-panel" aria-label="Market preview"><div className="preview-top"><span className="preview-label">Live preview</span><span className="demo-chip">TESTNET</span></div><div className="token-art" aria-hidden="true"><div className="orb orb-one" /><div className="orb orb-two" /><div className="orb orb-three" /><span>{(form.ticker || 'LU').slice(0, 2)}</span></div><p className="preview-ticker">${form.ticker || 'TICKER'}</p><h3>{form.name || 'Your market name'}</h3><p className="preview-description">{form.description || 'A concise description will appear here.'}</p><div className="preview-stats"><div><span>Supply</span><strong>{formatNumber(form.supply)}</strong></div><div><span>Liquidity</span><strong>{formatNumber(form.liquidity)} <small>{form.quoteAsset}</small></strong></div></div><KuruReference pulse={kuruPulse} /><div className="preview-foot"><span className="status-dot" />{selectedQuote.value} quote asset <span className="preview-divider" /> {wallet ? 'Monad testnet ready' : 'local draft'}</div></aside>
       </div>
       <SavedMarkets markets={savedMarkets} />
+      <LaunchFeed account={wallet?.address} />
     </section>
   );
 }

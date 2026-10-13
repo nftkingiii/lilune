@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@category-labs/mera": "^0.2.0",
+    "@envio-dev/hypersync-client": "^1.4.1",
     "@scure/bip32": "^2.4.0",
     "@scure/bip39": "^2.4.0",
     "lucide-react": "^0.468.0",

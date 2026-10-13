@@ -3,6 +3,7 @@ import { stat } from "node:fs/promises";
 import { extname, isAbsolute, join, normalize, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer } from "node:http";
+import { handleEnvioRequest } from "./envio.mjs";
 
 const root = resolve(fileURLToPath(new URL("./dist", import.meta.url)));
 const port = Number(process.env.PORT || 4173);
@@ -91,6 +92,11 @@ const server = createServer(async (request, response) => {
   if (request.url?.split("?")[0] === "/healthz") {
     response.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     response.end(JSON.stringify({ ok: true, revision }));
+    return;
+  }
+
+  if (request.url?.startsWith("/api/envio/")) {
+    await handleEnvioRequest(request.url, response);
     return;
   }
 

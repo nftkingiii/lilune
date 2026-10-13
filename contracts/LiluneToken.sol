@@ -18,6 +18,9 @@ contract LiluneToken {
 
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
+    /// @notice Emitted once per launch. Its unique topic lets indexers (Envio
+    /// HyperSync) find every Lilune market without a factory contract.
+    event LiluneLaunched(address indexed creator, string name, string symbol, string premise, uint256 totalSupply);
 
     constructor(string memory name_, string memory symbol_, string memory premise_, uint256 wholeSupply) {
         require(wholeSupply > 0, "supply");
@@ -28,6 +31,7 @@ contract LiluneToken {
         totalSupply = wholeSupply * 10 ** decimals;
         balanceOf[msg.sender] = totalSupply;
         emit Transfer(address(0), msg.sender, totalSupply);
+        emit LiluneLaunched(msg.sender, name_, symbol_, premise_, totalSupply);
     }
 
     function transfer(address to, uint256 value) external returns (bool) {
