@@ -1,0 +1,64 @@
+name: Capture demo footage
+
+# Records the live site for the demo films (video/capture.mjs) and voices the
+# narration with Piper, then pushes the results to the video-capture branch.
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/new-session-1fnzq6]
+    paths: [video/capture.mjs, video/narration/**, .github/workflows/capture-video.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install tools
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+          pip install -q piper-tts
+      - name: Live service check
+        run: |
+          curl -s https://lilune-production.up.railway.app/healthz; echo
+          curl -s https://lilune-production.up.railway.app/api/envio/launches | head -c 600; echo
+      - name: Record the live site
+        run: node video/capture.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Voice the narration
+        run: |
+          mkdir -p video/out/voice video/out/model
+          base=https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/high
+          curl -sSL -o video/out/model/en_US-lessac-high.onnx $base/en_US-lessac-high.onnx
+          curl -sSL -o video/out/model/en_US-lessac-high.onnx.json $base/en_US-lessac-high.onnx.json
+          python - <<'PY'
+          import wave
+          from piper import PiperVoice
+          voice = PiperVoice.load("video/out/model/en_US-lessac-high.onnx")
+          for line in open("video/narration/demo.txt", encoding="utf-8"):
+              key, text = line.rstrip("\n").split("|", 1)
+              with wave.open(f"video/out/voice/demo-{key}.wav", "wb") as out:
+                  (voice.synthesize_wav if hasattr(voice, "synthesize_wav") else voice.synthesize)(text, out)
+              print("voiced", key)
+          PY
+      - name: Publish to the video-capture branch
+        run: |
+          cd video/out
+          git init -q -b video-capture
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -qm "Demo footage captured from the live site"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" video-capture

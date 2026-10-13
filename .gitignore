@@ -3,3 +3,4 @@ dist/
 .env*
 PROJECT_STATE.md
 artifacts/
+video/out/
